@@ -8,3 +8,5 @@ reportlab>=4.0.0
 weasyprint>=60.0
 faiss-cpu>=1.7.4
 sentence-transformers>=2.7.0
+fastapi>=0.104.0
+uvicorn>=0.24.0
