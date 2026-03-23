@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python cache
 __pycache__/
 *.pyc
@@ -8,3 +9,52 @@ __pycache__/
 .venv/
 
 .env
+=======
+# ── Environment Variables — NEVER commit this ─────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual Environments ──────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# ── Streamlit ─────────────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── Uploaded Contracts (sensitive legal documents) ───────────────────────
+uploads/
+*.pdf
+
+# ── Model / Vector DB Cache ───────────────────────────────────────────────
+*.faiss
+*.index
+vector_store/
+embeddings_cache/
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+>>>>>>> 798120d2f30a52eb2fb376b77240a6288f5bd505
