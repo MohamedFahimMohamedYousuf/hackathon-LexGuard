@@ -195,8 +195,8 @@ def _build_pdf(state, exec_summary: str) -> bytes:
 
     # PAGE 1 — COVER
     story.append(Spacer(1, 3*cm))
-    story.append(Paragraph("⚖ LexGuard", S["title"]))
-    story.append(Paragraph("Legal Risk Brief", style("sub2", fontSize=16, textColor=COL_ACCENT, alignment=TA_CENTER, spaceAfter=2)))
+    story.append(Paragraph("LexGuard", S["title"]))
+    story.append(Paragraph(" ", style("sub2", fontSize=16, textColor=COL_ACCENT, alignment=TA_CENTER, spaceAfter=2)))
     story.append(Spacer(1, 0.5*cm))
     story.append(HRFlowable(width="100%", thickness=2, color=COL_PRIMARY))
     story.append(Spacer(1, 0.5*cm))
