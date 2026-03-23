@@ -19,6 +19,7 @@ import metadata_extraction_agent
 import clause_comparison_agent
 import risk_classification_agent
 import report_generation_agent
+import database
 
 logging.basicConfig(
     level=logging.INFO,
@@ -83,6 +84,13 @@ def run_pipeline(file_bytes: bytes, file_name: str) -> PipelineState:
         logger.error(f"[Orchestrator] Report generation failed: {state.report_error}")
     else:
         logger.info(f"[Orchestrator] Report generated ({len(state.report_pdf_bytes):,} bytes).")
+
+    # ── Save to MongoDB (non-fatal if DB unavailable) ─────────────────
+    db_id = database.save_review(state)
+    if db_id:
+        logger.info(f"[Orchestrator] Review saved to MongoDB.")
+    else:
+        logger.warning("[Orchestrator] MongoDB save skipped (DB unavailable or not configured).")
 
     logger.info(f"[Orchestrator] Pipeline complete. Ingestion status: {state.ingestion_status.value}")
     return state
