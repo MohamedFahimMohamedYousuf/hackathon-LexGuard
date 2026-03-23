@@ -170,6 +170,7 @@ if not st.session_state.pipeline_ran:
     # ── Write ALL results into session_state so sidebar can read them ─────
     st.session_state.agent_statuses["Document Ingestion"]  = state.ingestion_status
     st.session_state.agent_statuses["Metadata Extraction"] = state.metadata_status
+    # metadata_error stored in state for banner display
     st.session_state.agent_statuses["Clause Comparison"]   = state.clause_status
     st.session_state.agent_statuses["Risk Classification"] = state.risk_status
     st.session_state.agent_statuses["Report Generation"]   = state.report_status
@@ -188,6 +189,8 @@ if not st.session_state.pipeline_ran:
         "clause_segments": [
             {k: v for k, v in c.items()} for c in state.clause_segments
         ],
+        "contract_metadata": state.contract_metadata,
+        "metadata_status":   state.metadata_status.value,
         "full_text":                state.full_text,
         "pages": [
             {"page_number": p.page_number, "text": p.text,
@@ -206,6 +209,9 @@ state  = st.session_state.pipeline_state
 output = st.session_state.pipeline_json
 
 # ── Agent status banner ───────────────────────────────────────────────────
+if state.metadata_status == AgentStatus.FAILED:
+    st.warning(f"Metadata Extraction failed: {getattr(state, 'metadata_error', 'Unknown error')} — check your GEMINI_API_KEY.")
+
 if state.ingestion_status == AgentStatus.FAILED:
     st.error(f"Ingestion Agent FAILED: {state.ingestion_error}")
     st.stop()
@@ -242,7 +248,7 @@ if state.ingestion_warnings:
 st.divider()
 
 # ── Tabs ──────────────────────────────────────────────────────────────────
-tab1, tab2 = st.tabs(["📄 Extracted text", "🔍 Clause segments"])
+tab1, tab2, tab3 = st.tabs(["📄 Extracted text", "🔍 Clause segments", "🧾 Metadata"])
 
 with tab1:
     view = st.radio("View", ["Full document", "Page by page"],
@@ -308,3 +314,82 @@ with tab2:
                 c1.markdown(f"**Risk weight:** {RISK_BADGE.get(risk, risk)}")
                 c2.markdown(f"**Category:** {cat_icon} {category.replace('_',' ').title()}")
                 c3.markdown(f"**Document heading:** `{raw}`")
+
+# ── Tab 3: Metadata ───────────────────────────────────────────────────────
+with tab3:
+    if state.metadata_status == AgentStatus.PENDING:
+        st.info("Metadata Extraction Agent has not run yet.")
+    elif state.metadata_status == AgentStatus.FAILED:
+        st.error(f"Metadata extraction failed: {getattr(state, 'metadata_error', '')}")
+    elif not state.contract_metadata:
+        st.warning("No metadata extracted.")
+    else:
+        meta          = state.contract_metadata
+        contract_type = meta.get("_contract_type", state.contract_type)
+        model_used    = meta.get("_model", "")
+        schema_fields = meta.get("_schema_fields", [])
+
+        st.success(f"Metadata extracted using **{model_used}** for **{contract_type}** contract")
+        st.divider()
+
+        FIELD_ICONS = {
+            "effective_date":         "📅",
+            "parties":                "👥",
+            "partners":               "👥",
+            "term":                   "⏱️",
+            "jurisdiction":           "⚖️",
+            "confidentiality_period": "🔒",
+            "service_provider":       "🏢",
+            "customer":               "👤",
+            "service_scope":          "📋",
+            "vendor_name":            "🏢",
+            "client_name":            "👤",
+            "payment_terms":          "💰",
+            "business_name":          "🏷️",
+            "ownership_split":        "📊",
+            "key_obligations":        "📝",
+        }
+
+        for field in schema_fields:
+            value = meta.get(field, "Not found")
+            icon  = FIELD_ICONS.get(field, "📌")
+            label = field.replace("_", " ").title()
+
+            col_l, col_r = st.columns([1, 2])
+            col_l.markdown(f"**{icon} {label}**")
+            if isinstance(value, list):
+                col_r.markdown("\n".join(f"- {v}" for v in value))
+            elif value == "Not found":
+                col_r.markdown("*:gray[Not found in document]*")
+            else:
+                col_r.markdown(str(value))
+            st.divider()
+
+st.divider()
+
+# ── Build + store pipeline state JSON (feeds sidebar viewer) ─────────────
+output = {
+    "file_name":                state.file_name,
+    "doc_hash":                 state.doc_hash,
+    "ingestion_status":         state.ingestion_status.value,
+    "contract_type":            state.contract_type,
+    "contract_type_confidence": state.contract_type_confidence,
+    "contract_type_method":     state.contract_type_method,
+    "page_count":               state.page_count,
+    "file_size_kb":             state.file_size_kb,
+    "scanned_pages":            state.scanned_pages,
+    "warnings":                 state.ingestion_warnings,
+    "metadata_status":          state.metadata_status.value,
+    "contract_metadata":        state.contract_metadata,
+    "clause_segments": [
+        {k: v for k, v in c.items()} for c in state.clause_segments
+    ],
+    "full_text": state.full_text,
+    "pages": [
+        {"page_number": p.page_number, "text": p.text,
+         "char_count": p.char_count,   "is_scanned": p.is_scanned}
+        for p in state.pages
+    ],
+}
+st.session_state.pipeline_json = output
+st.info("Open the sidebar (top-left ▶) to inspect the live pipeline state JSON.", icon="🗂️")

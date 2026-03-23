@@ -1,13 +1,47 @@
-./_pycache_
-./venv
-*.pyc
-*.pyo  
+# ── Environment Variables — NEVER commit this ─────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
 
-# Python cache
+# ── Python ────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
- 
-# Virtual environment
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual Environments ──────────────────────────────────────────────────
 .venv/
+venv/
+env/
+ENV/
+.env/
+
+# ── Streamlit ─────────────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── Uploaded Contracts (sensitive legal documents) ───────────────────────
+uploads/
+*.pdf
+
+# ── Model / Vector DB Cache ───────────────────────────────────────────────
+*.faiss
+*.index
+vector_store/
+embeddings_cache/
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user

@@ -37,24 +37,25 @@ class PipelineState:
     doc_hash: Optional[str] = None
     page_count: int = 0
     file_size_kb: float = 0.0
-    full_text: str = ""           # Raw joined text
-    clean_text: str = ""          # Normalised text after cleaning
+    full_text: str = ""
+    clean_text: str = ""
     pages: list[PageData] = field(default_factory=list)
     scanned_pages: list[int] = field(default_factory=list)
     ingestion_warnings: list[str] = field(default_factory=list)
-
-    # ── Contract type detection ──────────────────────────────────
-    contract_type: str = "UNKNOWN"           # NDA | SLA | VENDOR | PARTNERSHIP
-    contract_type_confidence: str = "low"    # high | medium | low
-    contract_type_method: str = ""           # keyword | llm
-
-    # ── Clause structure ─────────────────────────────────────────
+    contract_type: str = "UNKNOWN"
+    contract_type_confidence: str = "low"
+    contract_type_method: str = ""
     clause_segments: list[dict] = field(default_factory=list)
-    # Each dict: { id, heading, text, level, clause_type }
 
-    # ── Metadata Extraction Agent (filled later) ─────────────────
+    # ── Metadata Extraction Agent outputs ────────────────────────
     metadata_status: AgentStatus = AgentStatus.PENDING
+    metadata_error: Optional[str] = None
     contract_metadata: dict = field(default_factory=dict)
+    # contract_metadata structure (varies by contract type):
+    # NDA:         { effective_date, parties, term, jurisdiction, confidentiality_period }
+    # SLA:         { effective_date, service_provider, customer, service_scope, jurisdiction }
+    # VENDOR:      { effective_date, vendor_name, client_name, term, jurisdiction, payment_terms }
+    # PARTNERSHIP: { effective_date, partners, business_name, jurisdiction, term, ownership_split }
 
     # ── Clause Comparison Agent (filled later) ───────────────────
     clause_status: AgentStatus = AgentStatus.PENDING

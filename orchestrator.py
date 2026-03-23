@@ -15,9 +15,9 @@ This version runs without installing LangGraph so you can test immediately.
 import logging
 from agent_state import PipelineState, AgentStatus
 import document_ingestion_agent
+import metadata_extraction_agent
 
 # Placeholder stubs for future agents (not built yet)
-# import metadata_extraction_agent
 # import clause_comparison_agent
 # import risk_classification_agent
 # import report_generation_agent
@@ -55,9 +55,13 @@ def run_pipeline(file_bytes: bytes, file_name: str) -> PipelineState:
         # TODO: state = ocr_agent.run(state)
         # For now, continue with whatever text was extracted
 
-    # ── Node 2: Metadata Extraction Agent (stub) ──────────────────────
-    logger.info("[Orchestrator] Handing off to Metadata Extraction Agent... (coming next)")
-    # state = metadata_extraction_agent.run(state)
+    # ── Node 2: Metadata Extraction Agent ────────────────────────────
+    state = metadata_extraction_agent.run(state)
+    if state.metadata_status == AgentStatus.FAILED:
+        logger.error(f"[Orchestrator] Metadata extraction failed: {state.metadata_error}")
+        # Non-fatal — pipeline continues, downstream agents will have empty metadata
+    else:
+        logger.info("[Orchestrator] Metadata extraction completed.")
 
     # ── Node 3: Clause Comparison Agent (stub) ────────────────────────
     logger.info("[Orchestrator] Handing off to Clause Comparison Agent... (coming next)")
