@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from agent_state import AgentStatus
 from groq import Groq
-from dotenv import load_dotenv
+import config
 
 
 """
@@ -42,9 +42,9 @@ Output : PipelineState with clause_status = COMPLETED / FAILED
 logger = logging.getLogger(__name__)
 
 AGENT_NAME           = "ClauseComparisonAgent"
-EMBEDDING_MODEL      = "all-MiniLM-L6-v2"
-LLM_MODEL            = "llama-3.3-70b-versatile"
-DEVIATION_THRESHOLD  = 0.75 
+EMBEDDING_MODEL      = config.EMBEDDING_MODEL
+LLM_MODEL            = config.LLM_MODEL
+DEVIATION_THRESHOLD  = config.DEVIATION_THRESHOLD
 
 # ── Standard clause library 
 CLAUSE_LIBRARY = {
@@ -237,12 +237,9 @@ def _extract_clause_texts(clean_text: str, found_clauses: list) -> dict:
 # LLM DEVIATION SUMMARY
 def _get_groq_client():
     """Initialise Groq client. Returns None if not available."""
-    try:
-        api_key = os.getenv("GROQ_API_KEY")
-        if api_key:
-            return Groq(api_key=api_key)
-    except ImportError:
-        pass
+    api_key = config.GROQ_API_KEY
+    if api_key:
+        return Groq(api_key=api_key)
     return None
 
 
@@ -291,14 +288,8 @@ Write the deviation summary:"""
 
 # HELPERS
 def _load_env():
-    try:
-        env_path = Path(__file__).resolve().parent / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path)
-        else:
-            load_dotenv()
-    except ImportError:
-        pass
+    # Deprecated: Handled by config.py
+    pass
 
 
 def _fail(state, error):

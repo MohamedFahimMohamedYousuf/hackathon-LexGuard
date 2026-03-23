@@ -15,8 +15,8 @@ from reportlab.platypus import (
     )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from groq import Groq
-from dotenv import load_dotenv
 from agent_state import AgentStatus
+import config
 
 """
 LexGuard — Report Generation Agent
@@ -49,7 +49,7 @@ Output   : state.report_pdf_bytes, state.report_status = COMPLETED
 
 logger = logging.getLogger(__name__)
 AGENT_NAME = "ReportGenerationAgent"
-LLM_MODEL  = "llama-3.3-70b-versatile"
+LLM_MODEL  = config.LLM_MODEL
 
 
 # MAIN ENTRY POINT
@@ -471,24 +471,15 @@ def _build_pdf(state, exec_summary: str) -> bytes:
 
 # HELPERS
 def _get_groq_client():
-    try:
-        api_key = os.getenv("GROQ_API_KEY")
-        if api_key:
-            return Groq(api_key=api_key)
-    except ImportError:
-        pass
+    api_key = config.GROQ_API_KEY
+    if api_key:
+        return Groq(api_key=api_key)
     return None
 
 
 def _load_env():
-    try:
-        env_path = Path(__file__).resolve().parent / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path)
-        else:
-            load_dotenv()
-    except ImportError:
-        pass
+    # Deprecated: Handled by config.py
+    pass
 
 
 def _fail(state, error):

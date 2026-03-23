@@ -4,8 +4,8 @@ import os
 import re
 from pathlib import Path
 from groq import Groq
-from dotenv import load_dotenv
 from agent_state import AgentStatus
+import config
 
 
 """
@@ -21,7 +21,7 @@ API Docs : https://console.groq.com
 logger = logging.getLogger(__name__)
 
 AGENT_NAME = "MetadataExtractionAgent"
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = config.LLM_MODEL
 
 
 
@@ -77,7 +77,7 @@ def run(state):
     _load_env()
 
     # Check API key
-    api_key = os.getenv("GROQ_API_KEY")
+    api_key = config.GROQ_API_KEY
     if not api_key:
         return _fail(state,
             "GROQ_API_KEY not found. "
@@ -141,15 +141,8 @@ def run(state):
 
 # HELPERS
 def _load_env():
-    try:
-        env_path = Path(__file__).resolve().parent / ".env"
-        if env_path.exists():
-            load_dotenv(dotenv_path=env_path)
-            logger.info(f"[{AGENT_NAME}] Loaded .env from {env_path}")
-        else:
-            load_dotenv()
-    except ImportError:
-        pass
+    # Deprecated: Handled by config.py
+    pass
 
 
 def _build_prompt(text, contract_type, schema):

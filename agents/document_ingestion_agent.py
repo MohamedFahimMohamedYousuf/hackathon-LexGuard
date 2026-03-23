@@ -3,6 +3,7 @@ import re
 import logging
 from agent_state import PipelineState, AgentStatus, PageData
 import fitz
+import config
 
 """
 LexGuard — Document Ingestion Agent
@@ -22,8 +23,8 @@ Step 5 — Clause Segmentation      : match headings → canonical titles
 logger = logging.getLogger(__name__)
 
 AGENT_NAME        = "DocumentIngestionAgent"
-MAX_SIZE_MB       = 20
-SCANNED_THRESHOLD = 50
+MAX_SIZE_MB       = config.MAX_FILE_SIZE_MB
+SCANNED_THRESHOLD = config.SCANNED_PAGE_THRESHOLD
 
 
 CONTRACT_SIGNATURES = {
