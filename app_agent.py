@@ -10,10 +10,7 @@ from agent_state import AgentStatus
 
 st.set_page_config(page_title="LexGuard", page_icon="⚖️", layout="wide")
 
-# ── Session state defaults ────────────────────────────────────────────────
-# Initialise ALL session state keys upfront before ANY rendering happens.
-# This is critical — sidebar reads from these keys, main page writes to them.
-
+# Session state defaults 
 if "agent_statuses" not in st.session_state:
     st.session_state.agent_statuses = {
         "Document Ingestion":  AgentStatus.PENDING,
@@ -32,7 +29,7 @@ if "show_json" not in st.session_state:
 if "pipeline_ran" not in st.session_state:
     st.session_state.pipeline_ran = False
 
-# ── Constants ─────────────────────────────────────────────────────────────
+# Constants 
 STATUS_ICON = {
     AgentStatus.COMPLETED: "🟢",
     AgentStatus.RUNNING:   "🔵",
@@ -48,15 +45,13 @@ STATUS_LABEL = {
     AgentStatus.PENDING:   "Pending",
 }
 
-# ══════════════════════════════════════════════════════════════════════════
-# SIDEBAR — reads from session_state (always up to date)
-# ══════════════════════════════════════════════════════════════════════════
+# SIDEBAR 
 with st.sidebar:
     st.markdown("### ⚖️ LexGuard")
     st.caption("Multi-Agent Contract Review System")
     st.divider()
 
-    # ── Pipeline Status ───────────────────────────────────────────────────
+    # Pipeline Status
     st.markdown("#### 🔁 Pipeline Status")
 
     for agent_name, status in st.session_state.agent_statuses.items():
@@ -72,7 +67,7 @@ with st.sidebar:
     st.caption("Agents run in sequence. Each one unlocks the next.")
     st.divider()
 
-    # ── Pipeline State JSON — only shown after pipeline has run ───────────
+    # Pipeline State JSON — only shown after pipeline has run 
     if st.session_state.pipeline_json is not None:
         st.markdown("#### 🗂️ Pipeline State JSON")
         st.caption("Live state passed between agents")
@@ -133,9 +128,7 @@ with st.sidebar:
         st.caption("Upload a contract to see the pipeline JSON here.")
 
 
-# ══════════════════════════════════════════════════════════════════════════
 # MAIN PAGE
-# ══════════════════════════════════════════════════════════════════════════
 st.title("⚖️ LexGuard")
 st.caption("Multi-Agent Contract Review System — Document Ingestion Agent")
 st.divider()
@@ -155,8 +148,7 @@ if not uploaded_file:
     st.info("Upload a contract PDF. The Ingestion Agent will validate, extract, and hand off to the pipeline.")
     st.stop()
 
-# ── Run pipeline only once per upload ────────────────────────────────────
-# Use file name + size as a cache key so re-renders don't re-run the pipeline
+#  Run pipeline only once per upload 
 file_key = f"{uploaded_file.name}_{uploaded_file.size}"
 
 if st.session_state.get("last_file_key") != file_key:
@@ -216,11 +208,11 @@ if not st.session_state.pipeline_ran:
     # Rerun so sidebar re-renders with updated session_state values
     st.rerun()
 
-# ── From here, read results from session_state (not re-running pipeline) ──
+# From here, read results from session_state (not re-running pipeline) 
 state  = st.session_state.pipeline_state
 output = st.session_state.pipeline_json
 
-# ── Persistent download button at top if report is ready ────────────────────
+# Persistent download button at top if report is ready 
 if state.report_pdf_bytes:
     fname = state.file_name.replace(".pdf", "").replace(" ", "_")
     st.download_button(
@@ -233,19 +225,19 @@ if state.report_pdf_bytes:
         key="dl_pdf_top",
     )
 
-# ── Agent status banner ───────────────────────────────────────────────────
+# Agent status banner 
 if state.metadata_status == AgentStatus.FAILED:
     st.warning(f"Metadata Extraction failed: {getattr(state, 'metadata_error', 'Unknown error')} — check your GEMINI_API_KEY.")
 
-if state.ingestion_status == AgentStatus.FAILED:
-    st.error(f"Ingestion Agent FAILED: {state.ingestion_error}")
-    st.stop()
-elif state.ingestion_status == AgentStatus.NEEDS_OCR:
-    st.warning(f"Scanned pages detected: {state.scanned_pages}. OCR agent will handle these.")
-elif state.ingestion_status == AgentStatus.COMPLETED:
-    st.success("Ingestion Agent completed successfully. Ready for next agent.")
+# if state.ingestion_status == AgentStatus.FAILED:
+#     st.error(f"Ingestion Agent FAILED: {state.ingestion_error}")
+#     st.stop()
+# elif state.ingestion_status == AgentStatus.NEEDS_OCR:
+#     st.warning(f"Scanned pages detected: {state.scanned_pages}. OCR agent will handle these.")
+# elif state.ingestion_status == AgentStatus.COMPLETED:
+#     st.success("Ingestion Agent completed successfully. Ready for next agent.")
 
-# ── Metrics ───────────────────────────────────────────────────────────────
+# Metrics 
 col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Pages",         state.page_count)
 col2.metric("File size",     f"{state.file_size_kb} KB")
@@ -255,7 +247,7 @@ col4.metric("Clauses found", f"{found_n}/{len(state.clause_segments)}")
 col5.metric("Scanned pages", len(state.scanned_pages))
 st.caption(f"Document hash (SHA-256): `{state.doc_hash}`")
 
-# ── Contract type ─────────────────────────────────────────────────────────
+# Contract type 
 CONFIDENCE_COLOR = {"high": "🟢", "medium": "🟡", "low": "🔴"}
 conf_icon = CONFIDENCE_COLOR.get(state.contract_type_confidence, "⚪")
 st.markdown(
@@ -264,7 +256,7 @@ st.markdown(
     f"*(method: {state.contract_type_method})*"
 )
 
-# ── Warnings ──────────────────────────────────────────────────────────────
+# Warnings 
 if state.ingestion_warnings:
     with st.expander(f"⚠️ {len(state.ingestion_warnings)} warning(s)"):
         for w in state.ingestion_warnings:
@@ -272,7 +264,7 @@ if state.ingestion_warnings:
 
 st.divider()
 
-# ── Tabs ──────────────────────────────────────────────────────────────────
+# Tabs 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📄 Extracted text", "🔍 Clause segments", "🧾 Metadata", "⚖️ Clause Comparison", "🚨 Risk Register", "📋 Report"])
 
 with tab1:
@@ -340,7 +332,7 @@ with tab2:
                 c2.markdown(f"**Category:** {cat_icon} {category.replace('_',' ').title()}")
                 c3.markdown(f"**Document heading:** `{raw}`")
 
-# ── Tab 3: Metadata ───────────────────────────────────────────────────────
+# Tab 3: Metadata 
 with tab3:
     if state.metadata_status == AgentStatus.PENDING:
         st.info("Metadata Extraction Agent has not run yet.")
@@ -392,7 +384,7 @@ with tab3:
 
 st.divider()
 
-# ── Tab 5: Risk Register ──────────────────────────────────────────────────
+# Tab 5: Risk Register
 with tab5:
     if state.risk_status == AgentStatus.PENDING:
         st.info("Risk Classification Agent has not run yet.")
@@ -448,7 +440,7 @@ with tab5:
 
 st.divider()
 
-# ── Tab 6: Report ─────────────────────────────────────────────────────────
+# Tab 6: Report 
 with tab6:
     if state.report_status == AgentStatus.PENDING:
         st.info("Report Generation Agent has not run yet.")
@@ -459,7 +451,7 @@ with tab6:
     else:
         st.success(f"Legal Risk Brief is ready — {len(state.report_pdf_bytes):,} bytes")
 
-        # ── Big download button ───────────────────────────────────────────
+        # Big download button
         fname = state.file_name.replace(".pdf", "").replace(" ", "_")
         st.download_button(
             label="⬇ Download Legal Risk Brief (PDF)",
@@ -473,7 +465,7 @@ with tab6:
 
         st.divider()
 
-        # ── Report preview ────────────────────────────────────────────────
+        # Report preview
         st.subheader("Report preview")
         reg    = state.risk_register
         high   = [r for r in reg if r["severity"] == "HIGH"]
@@ -500,7 +492,7 @@ with tab6:
 
 st.divider()
 
-# ── Build + store pipeline state JSON (feeds sidebar viewer) ─────────────
+# Build + store pipeline state JSON (feeds sidebar viewer)
 output = {
     "file_name":                state.file_name,
     "doc_hash":                 state.doc_hash,
@@ -529,7 +521,7 @@ output = {
         for p in state.pages
     ],
 }
-# ── Tab 4: Clause Comparison ─────────────────────────────────────────────
+# Tab 4: Clause Comparison
 with tab4:
     if state.clause_status == AgentStatus.PENDING:
         st.info("Clause Comparison Agent has not run yet.")
