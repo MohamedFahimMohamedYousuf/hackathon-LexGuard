@@ -23,35 +23,35 @@ Risk Assessment: Severity-based risk classification (HIGH/MEDIUM/LOW)
 Report Generation: Professional PDF reports with executive summaries
 Database Integration: MongoDB storage for review history and analytics
 🏗️ Architecture
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Streamlit UI  │    │   FastAPI API   │    │   Chatbot UI    │
-│                 │    │                 │    │                 │
-│ • File Upload   │    │ • /api/analyze  │    │ • Interactive   │
-│ • Status View   │    │ • Health Check  │    │ • Q&A           │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Streamlit UI   │     │   FastAPI API   │     │   Chatbot UI    │
+│-----------------│     │-----------------│     │-----------------│
+│ • File Upload   │     │ • /api/analyze  │     │ • Interactive   │
+│ • Status View   │     │ • Health Check  │     │ • Q&A           │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+            │                     │                      │
+            └──────────────┬──────┴──────┬──────────────┘
+                           │
                     ┌─────────────────┐
                     │  Orchestrator   │
-                    │                 │
+                    │-----------------│
                     │ • Pipeline Mgmt │
                     │ • State Sharing │
                     └─────────────────┘
-                             │
+                           │
                     ┌─────────────────┐
                     │     Agents      │
-                    │                 │
+                    │-----------------│
                     │ • Ingestion     │
                     │ • Metadata      │
                     │ • Comparison    │
                     │ • Risk Analysis │
                     │ • Report Gen    │
                     └─────────────────┘
-                             │
+                           │
                     ┌─────────────────┐
-                    │   MongoDB       │
-                    │                 │
+                    │    MongoDB      │
+                    │-----------------│
                     │ • Review Store  │
                     │ • Analytics     │
                     └─────────────────┘
