@@ -94,8 +94,13 @@ with st.sidebar:
 
             elif json_section == "Clauses":
                 st.json([
-                    {"id": c["id"], "heading": c["heading"],
-                     "clause_type": c["clause_type"], "chars": c["char_count"]}
+                    {
+                        "id":            c.get("id", ""),
+                        "canonical_title": c.get("canonical_title", c.get("heading", "")),
+                        "category":      c.get("category", c.get("clause_type", "")),
+                        "risk_weight":   c.get("risk_weight", ""),
+                        "found":         c.get("found", False),
+                    }
                     for c in data.get("clause_segments", [])
                 ])
 
@@ -174,6 +179,7 @@ if not st.session_state.pipeline_ran:
     st.session_state.agent_statuses["Clause Comparison"]   = state.clause_status
     st.session_state.agent_statuses["Risk Classification"] = state.risk_status
     st.session_state.agent_statuses["Report Generation"]   = state.report_status
+    st.session_state.agent_statuses["Clause Comparison"]   = state.clause_status
 
     st.session_state.pipeline_json = {
         "file_name":                state.file_name,
@@ -248,7 +254,7 @@ if state.ingestion_warnings:
 st.divider()
 
 # ── Tabs ──────────────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["📄 Extracted text", "🔍 Clause segments", "🧾 Metadata"])
+tab1, tab2, tab3, tab4 = st.tabs(["📄 Extracted text", "🔍 Clause segments", "🧾 Metadata", "⚖️ Clause Comparison"])
 
 with tab1:
     view = st.radio("View", ["Full document", "Page by page"],
@@ -380,6 +386,8 @@ output = {
     "scanned_pages":            state.scanned_pages,
     "warnings":                 state.ingestion_warnings,
     "metadata_status":          state.metadata_status.value,
+        "clause_status":            state.clause_status.value,
+        "clause_comparisons":       state.clause_comparisons,
     "contract_metadata":        state.contract_metadata,
     "clause_segments": [
         {k: v for k, v in c.items()} for c in state.clause_segments
@@ -391,5 +399,47 @@ output = {
         for p in state.pages
     ],
 }
+# ── Tab 4: Clause Comparison ─────────────────────────────────────────────
+with tab4:
+    if state.clause_status == AgentStatus.PENDING:
+        st.info("Clause Comparison Agent has not run yet.")
+    elif state.clause_status == AgentStatus.FAILED:
+        st.error(f"Clause comparison failed: {getattr(state, 'clause_error', '')}")
+    elif not state.clause_comparisons:
+        st.warning("No clause comparisons available. Ensure clauses were found in the document.")
+    else:
+        comps     = state.clause_comparisons
+        deviated  = sum(1 for c in comps if c["is_deviated"])
+        ok        = len(comps) - deviated
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("✅ Aligned",  ok)
+        c2.metric("⚠️ Deviated", deviated)
+        c3.metric("📋 Compared", len(comps))
+        st.divider()
+
+        RISK_COLOR = {"HIGH": "🔴", "MEDIUM": "🟡", "LOW": "🟢"}
+
+        for comp in comps:
+            score     = comp["similarity_score"]
+            deviated_ = comp["is_deviated"]
+            risk      = comp.get("risk_weight", "MEDIUM")
+            status    = "⚠️ Deviated" if deviated_ else "✅ Aligned"
+            pct       = f"{score:.0%}"
+            label     = f"{status} — {comp['canonical_title']}  [{comp['category'].replace('_',' ').title()}]  {RISK_COLOR.get(risk,'')} {risk}"
+
+            with st.expander(label, expanded=deviated_):
+                col_s, col_r = st.columns([1, 3])
+                col_s.metric("Similarity", pct)
+                col_r.markdown(f"**Deviation summary:** {comp['deviation_summary']}")
+                st.divider()
+                ca, cb = st.columns(2)
+                ca.markdown("**📄 Contract clause (from document)**")
+                ca.text(comp["contract_text"][:400] + ("..." if len(comp["contract_text"]) > 400 else ""))
+                cb.markdown("**📚 Standard clause (from library)**")
+                cb.text(comp["standard_text"][:400] + ("..." if len(comp["standard_text"]) > 400 else ""))
+
+st.divider()
+
 st.session_state.pipeline_json = output
 st.info("Open the sidebar (top-left ▶) to inspect the live pipeline state JSON.", icon="🗂️")

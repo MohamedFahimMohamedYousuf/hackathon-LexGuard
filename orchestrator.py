@@ -16,9 +16,9 @@ import logging
 from agent_state import PipelineState, AgentStatus
 import document_ingestion_agent
 import metadata_extraction_agent
+import clause_comparison_agent
 
 # Placeholder stubs for future agents (not built yet)
-# import clause_comparison_agent
 # import risk_classification_agent
 # import report_generation_agent
 
@@ -63,9 +63,13 @@ def run_pipeline(file_bytes: bytes, file_name: str) -> PipelineState:
     else:
         logger.info("[Orchestrator] Metadata extraction completed.")
 
-    # ── Node 3: Clause Comparison Agent (stub) ────────────────────────
-    logger.info("[Orchestrator] Handing off to Clause Comparison Agent... (coming next)")
-    # state = clause_comparison_agent.run(state)
+    # ── Node 3: Clause Comparison Agent ──────────────────────────────
+    state = clause_comparison_agent.run(state)
+    if state.clause_status == AgentStatus.FAILED:
+        logger.error(f"[Orchestrator] Clause comparison failed: {state.clause_error}")
+    else:
+        deviated = sum(1 for c in state.clause_comparisons if c["is_deviated"])
+        logger.info(f"[Orchestrator] Clause comparison done — {deviated} deviations found.")
 
     # ── Node 4: Risk Classification Agent (stub) ──────────────────────
     logger.info("[Orchestrator] Handing off to Risk Classification Agent... (coming next)")

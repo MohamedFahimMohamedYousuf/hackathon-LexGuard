@@ -57,9 +57,18 @@ class PipelineState:
     # VENDOR:      { effective_date, vendor_name, client_name, term, jurisdiction, payment_terms }
     # PARTNERSHIP: { effective_date, partners, business_name, jurisdiction, term, ownership_split }
 
-    # ── Clause Comparison Agent (filled later) ───────────────────
+    # ── Clause Comparison Agent outputs ─────────────────────────
     clause_status: AgentStatus = AgentStatus.PENDING
-    clauses: list[dict] = field(default_factory=list)
+    clause_error: Optional[str] = None
+    clause_comparisons: list[dict] = field(default_factory=list)
+    # Each dict: {
+    #   clause_id, canonical_title, category, risk_weight,
+    #   contract_text,       ← extracted from document
+    #   standard_text,       ← from JSON library
+    #   similarity_score,    ← 0.0–1.0 (cosine similarity)
+    #   deviation_summary,   ← LLM-generated plain english
+    #   is_deviated,         ← True if similarity < threshold
+    # }
 
     # ── Risk Classification Agent (filled later) ─────────────────
     risk_status: AgentStatus = AgentStatus.PENDING
