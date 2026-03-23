@@ -1,0 +1,143 @@
+"""
+LexGuard — Orchestrator (Mini LangGraph-style pipeline)
+
+This shows EXACTLY how the Document Ingestion Agent fits into the
+multi-agent pipeline. The Orchestrator:
+  1. Creates the shared PipelineState
+  2. Calls each agent in order
+  3. Checks each agent's status before proceeding
+  4. Routes differently if a special status is detected (e.g. NEEDS_OCR)
+
+In production you'd replace this with LangGraph's StateGraph.
+This version runs without installing LangGraph so you can test immediately.
+"""
+
+import logging
+from agent_state import PipelineState, AgentStatus
+import document_ingestion_agent
+
+# Placeholder stubs for future agents (not built yet)
+# import metadata_extraction_agent
+# import clause_comparison_agent
+# import risk_classification_agent
+# import report_generation_agent
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+
+def run_pipeline(file_bytes: bytes, file_name: str) -> PipelineState:
+    """
+    Master pipeline. Runs all agents in sequence.
+    Each agent updates the shared state and returns it.
+    """
+
+    # ── Initialise shared state ────────────────────────────────────────
+    state = PipelineState(file_bytes=file_bytes, file_name=file_name)
+    logger.info(f"[Orchestrator] Pipeline started for: {file_name}")
+
+    # ── Node 1: Document Ingestion Agent ──────────────────────────────
+    state = document_ingestion_agent.run(state)
+
+    if state.ingestion_status == AgentStatus.FAILED:
+        logger.error(f"[Orchestrator] Pipeline aborted at ingestion. Error: {state.ingestion_error}")
+        return state
+
+    if state.ingestion_status == AgentStatus.NEEDS_OCR:
+        logger.warning(
+            f"[Orchestrator] Scanned pages found: {state.scanned_pages}. "
+            "Routing to OCR node... (stub — not built yet)"
+        )
+        # TODO: state = ocr_agent.run(state)
+        # For now, continue with whatever text was extracted
+
+    # ── Node 2: Metadata Extraction Agent (stub) ──────────────────────
+    logger.info("[Orchestrator] Handing off to Metadata Extraction Agent... (coming next)")
+    # state = metadata_extraction_agent.run(state)
+
+    # ── Node 3: Clause Comparison Agent (stub) ────────────────────────
+    logger.info("[Orchestrator] Handing off to Clause Comparison Agent... (coming next)")
+    # state = clause_comparison_agent.run(state)
+
+    # ── Node 4: Risk Classification Agent (stub) ──────────────────────
+    logger.info("[Orchestrator] Handing off to Risk Classification Agent... (coming next)")
+    # state = risk_classification_agent.run(state)
+
+    # ── Node 5: Report Generation Agent (stub) ────────────────────────
+    logger.info("[Orchestrator] Handing off to Report Generation Agent... (coming next)")
+    # state = report_generation_agent.run(state)
+
+    logger.info(f"[Orchestrator] Pipeline complete. Ingestion status: {state.ingestion_status.value}")
+    return state
+
+
+# ── Quick test run ─────────────────────────────────────────────────────
+if __name__ == "__main__":
+    import sys
+
+    # Try to create a test PDF
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        import io
+
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=A4)
+        c.setFont("Helvetica", 11)
+        y = 780
+        lines = [
+            "NON-DISCLOSURE AGREEMENT",
+            "",
+            "This Agreement is entered into as of January 1, 2025,",
+            "by and between Acme Corp and Beta Ltd.",
+            "",
+            "1. CONFIDENTIALITY",
+            "The Receiving Party shall hold all Confidential Information in strict confidence.",
+            "",
+            "2. LIABILITY CAP",
+            "Total liability shall not exceed USD 50,000 under any circumstances.",
+            "",
+            "3. TERM",
+            "This Agreement shall remain in effect for two (2) years.",
+            "",
+            "4. GOVERNING LAW",
+            "This Agreement is governed by the laws of the State of California.",
+        ]
+        for line in lines:
+            c.drawString(50, y, line)
+            y -= 20
+        c.save()
+        buf.seek(0)
+        test_bytes = buf.read()
+        test_name  = "test_nda.pdf"
+        print("Test PDF created with reportlab.\n")
+
+    except ImportError:
+        print("reportlab not installed. Please put a PDF named 'sample.pdf' in this folder.")
+        sys.exit(1)
+
+    # Run the pipeline
+    final_state = run_pipeline(test_bytes, test_name)
+
+    # Print results
+    print("\n" + "="*55)
+    print("PIPELINE STATE AFTER INGESTION AGENT")
+    print("="*55)
+    print(f"  File name     : {final_state.file_name}")
+    print(f"  Status        : {final_state.ingestion_status.value}")
+    print(f"  Doc hash      : {final_state.doc_hash[:20]}..." if final_state.doc_hash else "  Doc hash      : None")
+    print(f"  Pages         : {final_state.page_count}")
+    print(f"  File size KB  : {final_state.file_size_kb}")
+    print(f"  Total chars   : {len(final_state.full_text):,}")
+    print(f"  Scanned pages : {final_state.scanned_pages}")
+    print(f"  Warnings      : {len(final_state.ingestion_warnings)}")
+    if final_state.ingestion_error:
+        print(f"  Error         : {final_state.ingestion_error}")
+    print()
+    print("TEXT PREVIEW (first 300 chars):")
+    print(final_state.full_text[:300])
+    print("="*55)
