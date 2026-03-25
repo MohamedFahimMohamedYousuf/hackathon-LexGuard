@@ -40,7 +40,6 @@ ENV/
 .env/
 .streamlit/secrets.toml
 uploads/
-*.pdf
 *.faiss
 *.index
 vector_store/
